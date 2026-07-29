@@ -50,7 +50,23 @@ class tfmApp:
         self.pager = pager(self,os.listdir(path))
         self.dp = displayer(self)
     def changePath(self,path):
-        pass
+        if path == "":
+            return
+        elif path == '..':
+            # 上级目录
+            self.path = os.path.dirname(self.path)
+        elif path[0] == '/' or (len(path) >= 2 and path[1] == ':'):
+            if os.path.isdir(path):
+                self.path = path
+            else:
+                self.path = os.getcwd()
+        else:
+            path = os.path.join(self.path,path)
+            if os.path.isdir(path):
+                self.path = path
+            else:
+                self.path = os.getcwd()
+        self.pager.updatePage(os.listdir(self.path))
     def run(self):
         self.dp.updateScreen()
         self.pager.printPage()
