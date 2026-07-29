@@ -45,6 +45,7 @@ def str2long(string: str, long: int, b="", s=" ") -> str:
     
 class tfmApp:
     def __init__(self,path:str) -> None:
+        self.status = 0 # 0:正常 1:退出
         self.path = path
         self.pager = pager(self,os.listdir(path))
         self.dp = displayer(self)
@@ -53,26 +54,30 @@ class tfmApp:
     def run(self):
         self.dp.updateScreen()
         self.pager.printPage()
-        self.runLoop()
+        while self.status == 0:
+            self.runLoop()
     def runLoop(self):
-        while True:
-            k = key.get()
-            if k:
-                if k == 'esc':
-                    return False
-                elif k == 'up':
-                    self.pager.itemLast()
-                elif k == 'down':
-                    self.pager.itemNext()
-                elif k == 'left':
-                    self.pager.pageLast()
-                elif k == 'right':
-                    self.pager.pageNext()
-                self.dp.updateScreen()
-                self.pager.printPage()
-            else:
-                # 没有按键时休眠，降低CPU占用
-                time.sleep(0.02)  # 20ms
+        k = key.get()
+        if k:
+            if k == 'esc':
+                self.status = 1
+            elif k == 'up':
+                self.pager.itemLast()
+            elif k == 'down':
+                self.pager.itemNext()
+            elif k == 'left':
+                self.pager.pageLast()
+            elif k == 'right':
+                self.pager.pageNext()
+            elif k == 'enter':
+                if os.path.isdir(os.path.join(self.path,self.pager.item[self.pager.chosing - 1])):
+                    self.changePath(self.pager.item[self.pager.chosing - 1])
+            elif k == 'backspace':
+                self.changePath("..")
+            #self.pager.printPage()
+        else:
+            # 没有按键时休眠，降低CPU占用
+            time.sleep(0.2)  # 200ms
 
 class displayer:
     def __init__(self,app:tfmApp) -> None:
@@ -234,6 +239,6 @@ class fileActionMenu:
     pass
 
 if __name__ == "__main__":
-    app = tfmApp(os.getcwd())
+    app = tfmApp(sys.argv[1] if len(sys.argv) > 1 else os.getcwd())
     app.run()
     pass
