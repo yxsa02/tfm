@@ -1,5 +1,48 @@
-import sys,os,shutil,time
+import sys,os,shutil,time,unicodedata
 import v,key
+
+def get_display_width(text: str) -> int:
+    """
+    使用 unicodedata 计算显示宽度
+    """
+    width = 0
+    for char in text:
+        # East Asian Width 属性
+        east_asian_width = unicodedata.east_asian_width(char)
+        if east_asian_width in ('F', 'W'):  # Fullwidth, Wide
+            width += 2
+        elif east_asian_width in ('H', 'Na'):  # Halfwidth, Narrow
+            width += 1
+        elif east_asian_width == 'A':  # Ambiguous (在中文环境下通常算2)
+            width += 2
+        else:  # Neutral
+            width += 1
+    return width
+def str2long(string: str, long: int, b="", s=" ") -> str:
+    """
+    使用 unicodedata 计算显示宽度
+    """
+    if long <= 0:
+        return ""
+    current_width = get_display_width(string)
+    if current_width == long:
+        return string
+    elif current_width < long:
+        padding_needed = long - current_width
+        return string + s * padding_needed
+    else:
+        # 截断
+        result = ""
+        width = 0
+        for char in string:
+            char_width = 2 if unicodedata.east_asian_width(char) in ('F', 'W', 'A') else 1
+            if width + char_width <= long - 1:
+                result += char
+                width += char_width
+            else:
+                break
+        return result + b
+    
 class tfmApp:
     def __init__(self,path:str) -> None:
         self.path = path
@@ -189,24 +232,6 @@ class fileActionMenu:
     def __init__(self) -> None:
         pass
     pass
-
-def str2long(string:str,long:int,b="",s=" ") -> str:
-    """
-    将字符串转换为指定长度
-    如果字符串长度小于指定长度，则在末尾添加指定字符（默认为空格）补齐
-    如果字符串长度大于指定长度，则截取指定长度的字符串，并在末尾添加指定字符（默认为空格）补齐
-    @param string: 要转换的字符串
-    @param long: 指定长度
-    @param b: 截取后添加的字符（默认为空格）
-    @param s: 补齐时添加的字符（默认为空格）
-    """
-    sl = len(string)
-    if sl == long:
-        return string
-    elif sl < long:
-        return string + s * (long -sl)
-    else:
-        return string [:long - 1] + b
 
 if __name__ == "__main__":
     app = tfmApp(os.getcwd())
