@@ -47,8 +47,8 @@ class tfmApp:
     def __init__(self,path:str) -> None:
         self.status = 0 # 0:正常 1:退出
         self.path = path
-        self.pager = pager(self,os.listdir(path))
         self.dp = displayer(self)
+        self.pager = pager(self,os.listdir(path))
     def changePath(self,path):
         if path == "":
             return
@@ -68,6 +68,7 @@ class tfmApp:
                 self.path = os.getcwd()
         self.pager.updatePage(os.listdir(self.path))
     def run(self):
+        self.dp.hideCursor()
         self.dp.updateScreen()
         self.pager.printPage()
         while self.status == 0:
@@ -148,6 +149,14 @@ class displayer:
         # 所有方法都失败，使用默认值
         self.w = 80
         self.h = 24
+    def hideCursor(self):
+        """隐藏光标"""
+        sys.stdout.write('\033[?25l')
+        sys.stdout.flush()
+    def showCursor(self):
+        """显示光标"""
+        sys.stdout.write('\033[?25h')
+        sys.stdout.flush()
     def moveCursor(self,x,y):
         """移动光标到指定位置"""
         sys.stdout.write(f"\033[{x};{y}H")
@@ -157,12 +166,10 @@ class displayer:
         self.moveCursor(1,1)
         self.set_color(v.COLORS['red'],v.BG_COLORS['blue'],v.STYLES['bold'])
         sys.stdout.write(f" TFM ")
-        self.set_color(v.COLORS['red'],v.BG_COLORS['green'],v.STYLES['bold'])
-        sys.stdout.write(str2long(self.app.path,self.w - 5))
         sys.stdout.write(v.RESET)
         sys.stdout.write(f"\n{" "*self.w}"*10)
-        self.set_color(v.COLORS['bright_red'],v.BG_COLORS['cyan'],v.STYLES['dim'])
-        sys.stdout.write("\n--" + str2long("TFM",self.w - 4,"-")+"--")
+        sys.stdout.write(str2long("",self.w))
+        sys.stdout.write("\n")
         sys.stdout.write(v.RESET)
         sys.stdout.flush()
     def set_color(self, fg=None, bg=None, style=None):
@@ -180,21 +187,34 @@ class displayer:
     def clearScreen(self):
         os.system('cls' if os.name == 'nt' else 'clear')
     def printItem(self,item:str,n:int,selected:bool):
-        self.moveCursor(n + 2,1)
+        self.moveCursor(n + 1,1)
         if selected:
             self.set_color(v.COLORS['bright_white'],v.BG_COLORS['blue'],v.STYLES['bold'])
         else:
             self.set_color(v.COLORS['white'],v.BG_COLORS['black'],v.STYLES['normal'])
-        sys.stdout.write(str2long(item,self.w))
+        sys.stdout.write(str2long(str(n)+"|"+item,self.w))
         sys.stdout.write(v.RESET)
         sys.stdout.write("\n")
+        sys.stdout.flush()
+    def printStatus(self,status:str):
+        self.moveCursor(12,1)
+        self.set_color(v.COLORS['red'],v.BG_COLORS['green'],v.STYLES['bold'])
+        #self.set_color(v.COLORS['bright_white'],v.BG_COLORS['black'],v.STYLES['bold'])
+        sys.stdout.write(str2long(status,self.w))
+        sys.stdout.write(v.RESET)
+        sys.stdout.flush()
+    def printTitleBar(self,message:str):
+        self.moveCursor(1,6)
+        self.set_color(v.COLORS['bright_red'],v.BG_COLORS['cyan'],v.STYLES['dim'])
+        sys.stdout.write(str2long(message,self.w - 5))
+        sys.stdout.write(v.RESET)
         sys.stdout.flush()
     
 class pager:
     def __init__(self,app,l) -> None:
         self.app = app
         self.count = 1 # 当前选中项
-        self.chosing = 0 # 当前页面的选中项
+        self.chosing = 1 # 当前页面的选中项
         self.updatePage(l)
     def updatePage(self,dirList):
         self.dir = dirList # 总条目列表
@@ -203,6 +223,9 @@ class pager:
         self.pageAll = a if int(a) == a else int(a) + 1 # 总页数
         self.page = 1 # 当前页码
         self.loadPageItems()
+        if self.chosing > len(self.item):
+            self.chosing = len(self.item)
+        self.printPage()
     def loadPageItems(self):
         self.item = self.dir[(self.page - 1) * 10 : self.page * 10] # 当前页的条目列表
     def pageLast(self):
@@ -215,40 +238,50 @@ class pager:
             a = (self.page - 1) * 10 + self.chosing
             self.count = a if a <= self.countAll else self.countAll
             self.loadPageItems()
+        self.printPage()
     def pageNext(self):
-            if self.page < self.pageAll:
-                self.page += 1
-                self.count += 10
-                self.loadPageItems()
-            else:
-                self.page = 1
-                self.count = self.chosing
-                self.loadPageItems()
+        if self.page < self.pageAll:
+            self.page += 1
+            self.count += 10
+        else:
+            self.page = 1
+            self.count = self.chosing
+        self.loadPageItems()
+        if self.chosing > len(self.item):
+            self.chosing = len(self.item)
+        self.printPage()
     def itemLast(self):
+        self.app.dp.printItem(self.item[self.chosing - 1],self.chosing,False)
         if self.chosing > 1:
             self.count -= 1
             self.chosing -= 1
         else:
-            self.chosing = 10
-            self.count += 10
+            self.chosing = len(self.item)
+            self.count += len(self.item) - 1
+        self.app.dp.printItem(self.item[self.chosing - 1],self.chosing,True)
     def itemNext(self):
-            if self.chosing < 10 and self.count < self.countAll:
-                self.count -= 1
-                self.chosing -= 1
-            else:
-                self.chosing = 10
-                self.count += 10
+        if self.countAll == 0:
+            return
+        self.app.dp.printItem(self.item[self.chosing - 1],self.chosing,False)
+        if self.chosing < len(self.item) and self.count < self.countAll:
+            self.count += 1
+            self.chosing += 1
+        else:
+            self.chosing = 1
+            self.count -= len(self.item) - 1
+        self.app.dp.printItem(self.item[self.chosing - 1],self.chosing,True)
     def pageChange(self,page):
         pass
     def chose(self,id):
         pass
     def printPage(self):
+        self.app.dp.printTitleBar(f"当前路径: {self.app.path}")
         for i in range(10):
             if i < len(self.item):
-                self.app.dp.printItem(self.item[i],i,i + 1 == self.chosing)
+                self.app.dp.printItem(self.item[i],i + 1,i + 1 == self.chosing)
             else:
-                self.app.dp.printItem("",i,False)
-
+                self.app.dp.printItem("",i + 1,False)
+        self.app.dp.printStatus(f"当前页码: {self.page}/{self.pageAll} | 当前选中项: {self.count}/{self.countAll}")
 class fileActionMenu:
     def __init__(self) -> None:
         pass
