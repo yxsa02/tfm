@@ -189,13 +189,23 @@ class displayer:
             sys.stdout.flush()
     def clearScreen(self):
         os.system('cls' if os.name == 'nt' else 'clear')
-    def printItem(self,item:str,n:int,selected:bool):
+    def printLeftItem(self,item:str,n:int,selected:bool):
         self.moveCursor(n + 1,1)
         if selected:
             self.set_color(v.COLORS['bright_white'],v.BG_COLORS['blue'],v.STYLES['bold'])
         else:
             self.set_color(v.COLORS['white'],v.BG_COLORS['black'],v.STYLES['normal'])
-        sys.stdout.write(str2long(str(n)+"|"+item,self.w))
+        sys.stdout.write(str2long(str(n)+"|"+item,self.askValue("lw")))
+        sys.stdout.write(v.RESET)
+        sys.stdout.write("\n")
+        sys.stdout.flush()
+    def printRightItem(self,item:str,n:int,selected:bool):
+        self.moveCursor(n + 1,self.askValue("lw") + 1)
+        if selected:
+            self.set_color(v.COLORS['bright_white'],v.BG_COLORS['blue'],v.STYLES['bold'])
+        else:
+            self.set_color(v.COLORS['white'],v.BG_COLORS['black'],v.STYLES['normal'])
+        sys.stdout.write(str2long(str(n)+"|"+item,self.askValue("rw")))
         sys.stdout.write(v.RESET)
         sys.stdout.write("\n")
         sys.stdout.flush()
@@ -212,7 +222,14 @@ class displayer:
         sys.stdout.write(str2long(message,self.w - 5))
         sys.stdout.write(v.RESET)
         sys.stdout.flush()
-    
+    def askValue(self,q):
+        if q == "lw":
+            return int(self.w * self.mainBarWidth)
+        elif q == "rw":
+            return int(self.w - int(self.w * self.mainBarWidth))
+        else:
+            return 0
+         
 class pager:
     def __init__(self,app,l) -> None:
         self.app = app
@@ -281,10 +298,11 @@ class pager:
         self.app.dp.printTitleBar(f"当前路径: {self.app.path}")
         for i in range(10):
             if i < len(self.item):
-                self.app.dp.printItem(self.item[i],i + 1,i + 1 == self.chosing)
+                self.app.dp.printLeftItem(self.item[i],i + 1,i + 1 == self.chosing)
             else:
-                self.app.dp.printItem("",i + 1,False)
+                self.app.dp.printLeftItem("",i + 1,False)
         self.app.dp.printStatus(f"当前页码: {self.page}/{self.pageAll} | 当前选中项: {self.count}/{self.countAll}")
+
 class fileActionMenu:
     action = {"open": "打开", "delete": "删除"}
     def __init__(self, app:tfmApp) -> None:
