@@ -49,6 +49,7 @@ class tfmApp:
         self.path = path
         self.dp = displayer(self)
         self.pager = pager(self,os.listdir(path))
+        self.fam = fileActionMenu(self)
     def changePath(self,path):
         if path == "":
             return
@@ -89,6 +90,8 @@ class tfmApp:
             elif k == 'enter':
                 if os.path.isdir(os.path.join(self.path,self.pager.item[self.pager.chosing - 1])):
                     self.changePath(self.pager.item[self.pager.chosing - 1])
+                else:
+                    self.fam.start()
             elif k == 'backspace':
                 self.changePath("..")
             #self.pager.printPage()
@@ -283,9 +286,66 @@ class pager:
                 self.app.dp.printItem("",i + 1,False)
         self.app.dp.printStatus(f"当前页码: {self.page}/{self.pageAll} | 当前选中项: {self.count}/{self.countAll}")
 class fileActionMenu:
-    def __init__(self) -> None:
+    action = {"open": "打开", "delete": "删除"}
+    def __init__(self, app:tfmApp) -> None:
+        self.app = app
+        self.keys = list(self.action.keys())
+    def start(self):
+        self.app.action = self # type: ignore
+        self.chosing = 1
+        self.printMenu()
+    def runLoop(self):
+        k = key.get()
+        if not k:
+            time.sleep(0.1)
+            return None
+        if k == 'esc':
+            self.app.action = self.app
+            self.app.dp.clearScreen()
+            self.app.dp.updateScreen()
+            self.app.pager.printPage()
+        if k == 'up':
+            self.last()
+        if k == 'down':
+            self.next()
+        if k == 'enter':
+            self.app.action = self.app
+            self.app.dp.clearScreen()
+            self.app.dp.updateScreen()
+            self.app.pager.printPage()
+            self.do(self.keys[self.chosing - 1])
+        return None
+    def do(self,action):
+        if action == "open":
+            os.system(f'start "" "{os.path.join(self.app.path,self.app.pager.item[self.app.pager.chosing - 1])}"')
+        elif action == "delete":
+            os.remove(os.path.join(self.app.path,self.app.pager.item[self.app.pager.chosing - 1]))
+            self.app.pager.updatePage(os.listdir(self.app.path))
+        
         pass
-    pass
+    def last(self):
+        if self.chosing > 1:
+            self.chosing -= 1
+        else:
+            self.chosing = len(self.keys)
+        self.printMenu()
+    def next(self):
+        if self.chosing < len(self.keys):
+            self.chosing += 1
+        else:
+            self.chosing = 1
+        self.printMenu()
+    def chose(self,n):
+        if n < 1 or n > len(self.keys):
+            return None
+        self.app.dp.printRightItem(self.action[self.keys[self.chosing - 1]], self.chosing, False)
+        self.chosing = n
+        self.app.dp.printRightItem(self.action[self.keys[self.chosing - 1]], self.chosing, True)
+    def printMenu(self):
+        for i in range(len(self.keys)):
+            self.app.dp.printRightItem(self.action[self.keys[i]], i + 1, i + 1 == self.chosing)
+        for i in range(len(self.keys), 10):
+            self.app.dp.printRightItem("", i + 1, False)
 
 if __name__ == "__main__":
     app = tfmApp(sys.argv[1] if len(sys.argv) > 1 else os.getcwd())
