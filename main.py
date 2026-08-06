@@ -44,6 +44,7 @@ def str2long(string: str, long: int, b="", s=" ") -> str:
         return result + b
     
 class tfmApp:
+    """终端文件管理器"""
     def __init__(self,path:str) -> None:
         self.status = 0 # 0:正常 1:退出
         self.action = self
@@ -52,6 +53,7 @@ class tfmApp:
         self.pager = pager(self,os.listdir(path))
         self.fam = fileActionMenu(self)
     def changePath(self,path):
+        """改变当前路径"""
         if path == "":
             return
         elif path == '..':
@@ -70,6 +72,7 @@ class tfmApp:
                 self.path = os.getcwd()
         self.pager.updatePage(os.listdir(self.path))
     def run(self):
+        """运行程序"""
         self.dp.hideCursor()
         self.dp.updateScreen()
         self.pager.printPage()
@@ -77,6 +80,7 @@ class tfmApp:
             self.action.runLoop()
         self.dp.showCursor()
     def runLoop(self):
+        """运行循环"""
         k = key.get()
         if k:
             if k == 'esc':
@@ -102,6 +106,7 @@ class tfmApp:
             time.sleep(0.2)  # 200ms
 
 class displayer:
+    """终端显示器"""
     def __init__(self,app:tfmApp) -> None:
         self.app = app
         self.mainBarWidth = 0.7
@@ -168,6 +173,7 @@ class displayer:
         sys.stdout.write(f"\033[{x};{y}H")
         sys.stdout.flush()
     def updateScreen(self):
+        """更新屏幕显示"""
         self.clearScreen()
         self.moveCursor(1,1)
         self.set_color(v.COLORS['red'],v.BG_COLORS['blue'],v.STYLES['bold'])
@@ -191,8 +197,10 @@ class displayer:
             sys.stdout.write(f"\033[{';'.join(codes)}m")
             sys.stdout.flush()
     def clearScreen(self):
+        """清屏"""
         os.system('cls' if os.name == 'nt' else 'clear')
     def printLeftItem(self,item:str,n:int,selected:bool):
+        """打印左侧条目"""
         self.moveCursor(n + 1,1)
         if selected:
             self.set_color(v.COLORS['bright_white'],v.BG_COLORS['blue'],v.STYLES['bold'])
@@ -203,6 +211,7 @@ class displayer:
         sys.stdout.write("\n")
         sys.stdout.flush()
     def printRightItem(self,item:str,n:int,selected:bool):
+        """打印右侧条目"""
         self.moveCursor(n + 1,self.askValue("lw") + 1)
         if selected:
             self.set_color(v.COLORS['bright_white'],v.BG_COLORS['blue'],v.STYLES['bold'])
@@ -213,6 +222,7 @@ class displayer:
         sys.stdout.write("\n")
         sys.stdout.flush()
     def printStatus(self,status:str):
+        """打印状态栏"""
         self.moveCursor(12,1)
         self.set_color(v.COLORS['red'],v.BG_COLORS['green'],v.STYLES['bold'])
         #self.set_color(v.COLORS['bright_white'],v.BG_COLORS['black'],v.STYLES['bold'])
@@ -220,12 +230,14 @@ class displayer:
         sys.stdout.write(v.RESET)
         sys.stdout.flush()
     def printTitleBar(self,message:str):
+        """打印标题栏"""
         self.moveCursor(1,6)
         self.set_color(v.COLORS['bright_red'],v.BG_COLORS['cyan'],v.STYLES['dim'])
         sys.stdout.write(str2long(message,self.w - 5))
         sys.stdout.write(v.RESET)
         sys.stdout.flush()
     def askValue(self,q):
+        """获取值"""
         if q == "lw":
             return int(self.w * self.mainBarWidth)
         elif q == "rw":
@@ -234,12 +246,14 @@ class displayer:
             return 0
          
 class pager:
+    """分页器"""
     def __init__(self,app,l) -> None:
         self.app = app
         self.count = 1 # 当前选中项
         self.chosing = 1 # 当前页面的选中项
         self.updatePage(l)
     def updatePage(self,dirList):
+        """更新分页器"""
         self.dir = dirList # 总条目列表
         self.countAll = len(dirList) # 总条目数
         a = self.countAll / 10
@@ -250,8 +264,10 @@ class pager:
             self.chosing = len(self.item)
         self.printPage()
     def loadPageItems(self):
+        """加载当前页的条目"""
         self.item = self.dir[(self.page - 1) * 10 : self.page * 10] # 当前页的条目列表
     def pageLast(self):
+        """上一页"""
         if self.page > 1:
             self.page -= 1
             self.count -= 10
@@ -263,6 +279,7 @@ class pager:
             self.loadPageItems()
         self.printPage()
     def pageNext(self):
+        """下一页"""
         if self.page < self.pageAll:
             self.page += 1
             self.count += 10
@@ -274,6 +291,7 @@ class pager:
             self.chosing = len(self.item)
         self.printPage()
     def itemLast(self):
+        """上一项"""
         self.app.dp.printLeftItem(self.item[self.chosing - 1],self.chosing,False)
         if self.chosing > 1:
             self.count -= 1
@@ -283,6 +301,7 @@ class pager:
             self.count += len(self.item) - 1
         self.app.dp.printLeftItem(self.item[self.chosing - 1],self.chosing,True)
     def itemNext(self):
+        """下一项"""
         if self.countAll == 0:
             return
         self.app.dp.printLeftItem(self.item[self.chosing - 1],self.chosing,False)
@@ -298,6 +317,7 @@ class pager:
     def chose(self,id):
         pass
     def printPage(self):
+        """打印当前页"""
         self.app.dp.printTitleBar(f"当前路径: {self.app.path}")
         for i in range(10):
             if i < len(self.item):
@@ -307,15 +327,18 @@ class pager:
         self.app.dp.printStatus(f"当前页码: {self.page}/{self.pageAll} | 当前选中项: {self.count}/{self.countAll}")
 
 class fileActionMenu:
+    """文件操作菜单"""
     action = {"open": "打开", "delete": "删除"}
     def __init__(self, app:tfmApp) -> None:
         self.app = app
         self.keys = list(self.action.keys())
     def start(self):
+        """启动文件操作菜单"""
         self.app.action = self # type: ignore
         self.chosing = 1
         self.printMenu()
     def runLoop(self):
+        """运行循环"""
         k = key.get()
         if not k:
             time.sleep(0.1)
@@ -337,6 +360,7 @@ class fileActionMenu:
             self.do(self.keys[self.chosing - 1])
         return None
     def do(self,action):
+        """执行操作"""
         if action == "open":
             os.system(f'start "" "{os.path.join(self.app.path,self.app.pager.item[self.app.pager.chosing - 1])}"')
         elif action == "delete":
@@ -345,24 +369,28 @@ class fileActionMenu:
         
         pass
     def last(self):
+        """选择上一项"""
         if self.chosing > 1:
             self.chosing -= 1
         else:
             self.chosing = len(self.keys)
         self.printMenu()
     def next(self):
+        """选择下一项"""
         if self.chosing < len(self.keys):
             self.chosing += 1
         else:
             self.chosing = 1
         self.printMenu()
     def chose(self,n):
+        """选择指定项"""
         if n < 1 or n > len(self.keys):
             return None
         self.app.dp.printRightItem(self.action[self.keys[self.chosing - 1]], self.chosing, False)
         self.chosing = n
         self.app.dp.printRightItem(self.action[self.keys[self.chosing - 1]], self.chosing, True)
     def printMenu(self):
+        """打印文件操作菜单"""
         for i in range(len(self.keys)):
             self.app.dp.printRightItem(self.action[self.keys[i]], i + 1, i + 1 == self.chosing)
         for i in range(len(self.keys), 10):
