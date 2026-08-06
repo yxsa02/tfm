@@ -46,6 +46,7 @@ def str2long(string: str, long: int, b="", s=" ") -> str:
 class tfmApp:
     def __init__(self,path:str) -> None:
         self.status = 0 # 0:正常 1:退出
+        self.action = self
         self.path = path
         self.dp = displayer(self)
         self.pager = pager(self,os.listdir(path))
@@ -73,7 +74,8 @@ class tfmApp:
         self.dp.updateScreen()
         self.pager.printPage()
         while self.status == 0:
-            self.runLoop()
+            self.action.runLoop()
+        self.dp.showCursor()
     def runLoop(self):
         k = key.get()
         if k:
