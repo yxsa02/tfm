@@ -102,6 +102,7 @@ class tfmApp:
 class displayer:
     def __init__(self,app:tfmApp) -> None:
         self.app = app
+        self.mainBarWidth = 0.7
         self.get_terminal_size()
     def get_terminal_size(self):
         """获取终端大小（跨平台）"""
@@ -271,25 +272,25 @@ class pager:
             self.chosing = len(self.item)
         self.printPage()
     def itemLast(self):
-        self.app.dp.printItem(self.item[self.chosing - 1],self.chosing,False)
+        self.app.dp.printLeftItem(self.item[self.chosing - 1],self.chosing,False)
         if self.chosing > 1:
             self.count -= 1
             self.chosing -= 1
         else:
             self.chosing = len(self.item)
             self.count += len(self.item) - 1
-        self.app.dp.printItem(self.item[self.chosing - 1],self.chosing,True)
+        self.app.dp.printLeftItem(self.item[self.chosing - 1],self.chosing,True)
     def itemNext(self):
         if self.countAll == 0:
             return
-        self.app.dp.printItem(self.item[self.chosing - 1],self.chosing,False)
+        self.app.dp.printLeftItem(self.item[self.chosing - 1],self.chosing,False)
         if self.chosing < len(self.item) and self.count < self.countAll:
             self.count += 1
             self.chosing += 1
         else:
             self.chosing = 1
             self.count -= len(self.item) - 1
-        self.app.dp.printItem(self.item[self.chosing - 1],self.chosing,True)
+        self.app.dp.printLeftItem(self.item[self.chosing - 1],self.chosing,True)
     def pageChange(self,page):
         pass
     def chose(self,id):
