@@ -11,6 +11,7 @@ class tfmApp:
         self.dp = displayer(self)
         self.pager = pager(self,os.listdir(path))
         self.fam = fileActionMenu(self)
+        self.mm = mainMenu(self)
     def changePath(self,path):
         """改变当前路径"""
         if path == "":
@@ -43,7 +44,7 @@ class tfmApp:
         k = key.get()
         if k:
             if k == 'esc':
-                self.status = 1
+                self.mm.show()
             elif k == 'up':
                 self.pager.itemLast()
             elif k == 'down':
@@ -363,6 +364,85 @@ class fileActionMenu:
             self.app.dp.printRightItem(self.action[self.keys[i]], i + 1, i + 1 == self.chosing)
         for i in range(len(self.keys), 10):
             self.app.dp.printRightItem("", i + 1, False)
+
+class renameDialog:
+    def __init__(self,app:tfmApp) -> None:
+        self.app = app
+        self.title = "Rename"
+        self.x = 1
+        self.y = 1
+        self.w = 1
+        self.h = 1
+    def runLoop(self):
+        pass
+    def show(self):
+        pass
+    def printWindow(self) -> None:
+        pass
+
+class mainMenu:
+    action = {"exit":"Exit","setting":"Setting","about":"About"}
+    def __init__(self,app:tfmApp) -> None:
+        self.app = app
+        self.keys = list(self.action.keys())
+        self.w = 0
+        for i in self.keys:
+            w = get_display_width(self.action[i])
+            if w >= self.w:
+                self.w = w + 1
+    def show(self):
+        self.chosing = 1
+        self.print()
+        self.app.action = self # type: ignore
+        self.app.dp.surfaces.append(self)
+        self.app.dp.updateScreen()
+    def print(self):
+        self.app.dp.moveCursor(2,1)
+        for i in self.keys:
+            if self.keys.index(i) + 1 == self.chosing:
+                self.app.dp.set_color(v.COLORS['bright_white'],v.BG_COLORS['magenta'],v.STYLES['bold'])
+            else:
+                self.app.dp.set_color(v.COLORS['white'],v.BG_COLORS['yellow'],v.STYLES['normal'])
+            sys.stdout.write(str2long(self.action[i],self.w))
+            sys.stdout.write(v.RESET)
+            sys.stdout.write("\n")
+    def runLoop(self):
+        """运行循环"""
+        k = key.get()
+        if not k:
+            time.sleep(0.1)
+            return None
+        if k == 'esc':
+            self.app.action = self.app
+            self.app.dp.surfaces.remove(self)
+            self.app.dp.updateScreen()
+        if k == 'up':
+            self.last()
+        if k == 'down':
+            self.next()
+        if k == 'enter':
+            self.app.action = self.app
+            self.do(self.keys[self.chosing - 1])
+            self.app.dp.surfaces.remove(self)
+            self.app.dp.updateScreen()
+        return None
+    def last(self):
+        """选择上一项"""
+        if self.chosing > 1:
+            self.chosing -= 1
+        else:
+            self.chosing = len(self.keys)
+        self.print()
+    def next(self):
+        """选择下一项"""
+        if self.chosing < len(self.keys):
+            self.chosing += 1
+        else:
+            self.chosing = 1
+        self.print()
+    def do(self,c):
+        if c == "exit":
+            self.app.status = 1
 
 if __name__ == "__main__":
     app = tfmApp(sys.argv[1] if len(sys.argv) > 1 else os.getcwd())
