@@ -10,6 +10,7 @@ try:
         """Windows 下的按键获取"""
         if blocking:
             ch = msvcrt.getch()
+
             if ch in (b'\x00', b'\xe0'):
                 ch2 = msvcrt.getch()
                 return ch + ch2
@@ -84,6 +85,9 @@ def get(blocking=True):
     
     # Unix/Linux/Mac - 处理转义序列
     if key == '\x1b':
+        if sys.platform == 'win32':
+            # ESC 键
+            return 'esc'
         # 读取完整的转义序列
         # 先读取下一个字符（阻塞），判断是否是 '['
         next_char = getch(blocking=True)
