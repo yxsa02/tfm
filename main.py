@@ -9,7 +9,12 @@ class tfmApp:
         self.action = self
         self.path = path
         self.dp = displayer(self)
-        self.pager = pager(self,os.listdir(path))
+        try:
+            self.pager = pager(self,os.listdir(path))
+        except PermissionError as e:
+            self.dp.printStatus("打开失败:权限不足")
+            self.path = os.getcwd()
+            self.pager = pager(self,os.listdir(self.path))
         self.fam = fileActionMenu(self)
         self.mm = mainMenu(self)
     def changePath(self,path):
@@ -30,7 +35,12 @@ class tfmApp:
                 self.path = path
             else:
                 self.path = os.getcwd()
-        self.pager.updatePage(os.listdir(self.path))
+        try:
+            self.pager.updatePage(os.listdir(self.path))
+        except PermissionError as e:
+            self.dp.printStatus("打开失败:权限不足")
+            self.path = os.getcwd()
+            self.pager.updatePage(os.listdir(self.path))
     def run(self):
         """运行程序"""
         self.dp.hideCursor()
@@ -334,9 +344,15 @@ class fileActionMenu:
             os.system(f'start "" "{os.path.join(self.app.path,self.app.pager.item[self.app.pager.chosing - 1])}"')
         elif action == "delete":
             os.remove(os.path.join(self.app.path,self.app.pager.item[self.app.pager.chosing - 1]))
-            self.app.pager.updatePage(os.listdir(self.app.path))
-        
-        pass
+            try:
+                self.app.pager.updatePage(os.listdir(self.app.path))
+            except PermissionError as e:
+                self.app.dp.printStatus("打开失败:权限不足")
+                self.app.path = os.getcwd()
+                self.app.pager.updatePage(os.listdir(self.app.path))
+        elif action == "rename":
+            pass
+        self.app.dp.surfaces.remove(self)
     def last(self):
         """选择上一项"""
         if self.chosing > 1:
