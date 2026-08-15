@@ -158,7 +158,15 @@ class displayer:
             sys.stdout.flush()
     def clearScreen(self):
         """清屏"""
-        os.system('cls' if os.name == 'nt' else 'clear')
+        if os.name == 'nt':
+        # Windows 10+ 支持 ANSI
+            if hasattr(sys, 'getwindowsversion') and sys.getwindowsversion().build >= 10586:
+                sys.stdout.write('\033[2J\033[3J\033[H')
+            else:
+                os.system('cls')
+        else:
+            sys.stdout.write('\033[2J\033[H')
+        #sys.stdout.flush()
     def printLeftItem(self,item:str,n:int,selected:bool):
         """打印左侧条目"""
         self.moveCursor(n + 1,1)
