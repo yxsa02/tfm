@@ -34,7 +34,7 @@ class tfmApp:
         """运行程序"""
         self.dp.hideCursor()
         self.dp.updateScreen()
-        self.pager.printPage()
+        #self.pager.print()
         while self.status == 0:
             self.action.runLoop()
         self.dp.showCursor()
@@ -59,7 +59,9 @@ class tfmApp:
                     self.fam.start()
             elif k == 'backspace':
                 self.changePath("..")
-            #self.pager.printPage()
+            elif k == 't':
+                self.mm.show()
+            #self.pager.print()
         else:
             # 没有按键时休眠，降低CPU占用
             time.sleep(0.2)  # 200ms
@@ -69,6 +71,7 @@ class displayer:
     def __init__(self,app:tfmApp) -> None:
         self.app = app
         self.mainBarWidth = 0.7
+        self.surfaces = []
         self.get_terminal_size()
     def get_terminal_size(self):
         """获取终端大小（跨平台）"""
@@ -137,10 +140,8 @@ class displayer:
         self.moveCursor(1,1)
         self.set_color(v.COLORS['red'],v.BG_COLORS['blue'],v.STYLES['bold'])
         sys.stdout.write(f" TFM ")
-        sys.stdout.write(v.RESET)
-        sys.stdout.write(f"\n{" "*self.w}"*10)
-        sys.stdout.write(str2long("",self.w))
-        sys.stdout.write("\n")
+        for i in self.surfaces:
+            i.print()
         sys.stdout.write(v.RESET)
         sys.stdout.flush()
     def set_color(self, fg=None, bg=None, style=None):
@@ -221,7 +222,7 @@ class pager:
         self.loadPageItems()
         if self.chosing > len(self.item):
             self.chosing = len(self.item)
-        self.printPage()
+        self.print()
     def loadPageItems(self):
         """加载当前页的条目"""
         self.item = self.dir[(self.page - 1) * 10 : self.page * 10] # 当前页的条目列表
@@ -236,7 +237,7 @@ class pager:
             a = (self.page - 1) * 10 + self.chosing
             self.count = a if a <= self.countAll else self.countAll
             self.loadPageItems()
-        self.printPage()
+        self.print()
     def pageNext(self):
         """下一页"""
         if self.page < self.pageAll:
@@ -248,7 +249,7 @@ class pager:
         self.loadPageItems()
         if self.chosing > len(self.item):
             self.chosing = len(self.item)
-        self.printPage()
+        self.print()
     def itemLast(self):
         """上一项"""
         self.app.dp.printLeftItem(self.item[self.chosing - 1],self.chosing,False)
@@ -275,7 +276,7 @@ class pager:
         pass
     def chose(self,id):
         pass
-    def printPage(self):
+    def print(self):
         """打印当前页"""
         self.app.dp.printTitleBar(f"当前路径: {self.app.path}")
         for i in range(10):
@@ -295,7 +296,7 @@ class fileActionMenu:
         """启动文件操作菜单"""
         self.app.action = self # type: ignore
         self.chosing = 1
-        self.printMenu()
+        self.print()
     def runLoop(self):
         """运行循环"""
         k = key.get()
@@ -333,14 +334,14 @@ class fileActionMenu:
             self.chosing -= 1
         else:
             self.chosing = len(self.keys)
-        self.printMenu()
+        self.print()
     def next(self):
         """选择下一项"""
         if self.chosing < len(self.keys):
             self.chosing += 1
         else:
             self.chosing = 1
-        self.printMenu()
+        self.print()
     def chose(self,n):
         """选择指定项"""
         if n < 1 or n > len(self.keys):
@@ -348,7 +349,7 @@ class fileActionMenu:
         self.app.dp.printRightItem(self.action[self.keys[self.chosing - 1]], self.chosing, False)
         self.chosing = n
         self.app.dp.printRightItem(self.action[self.keys[self.chosing - 1]], self.chosing, True)
-    def printMenu(self):
+    def print(self):
         """打印文件操作菜单"""
         for i in range(len(self.keys)):
             self.app.dp.printRightItem(self.action[self.keys[i]], i + 1, i + 1 == self.chosing)
