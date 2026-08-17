@@ -64,6 +64,8 @@ class tfmApp:
             elif k == 'right':
                 self.pager.pageNext()
             elif k == 'enter':
+                if self.pager.countAll == 0:
+                    return
                 if os.path.isdir(os.path.join(self.path,self.pager.item[self.pager.chosing - 1])):
                     self.changePath(self.pager.item[self.pager.chosing - 1])
                 else:
@@ -271,6 +273,8 @@ class pager:
         self.print()
     def itemLast(self):
         """上一项"""
+        if self.countAll == 0:
+            return
         self.app.dp.printLeftItem(self.item[self.chosing - 1],self.chosing,False)
         if self.chosing > 1:
             self.count -= 1
