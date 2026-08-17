@@ -17,6 +17,7 @@ class tfmApp:
             self.pager = pager(self,os.listdir(self.path))
         self.fam = fileActionMenu(self)
         self.mm = mainMenu(self)
+        self.rd = renameDialog(self)
     def changePath(self,path):
         """改变当前路径"""
         if path == "":
@@ -73,7 +74,7 @@ class tfmApp:
             elif k == 'backspace':
                 self.changePath("..")
             elif k == 't':
-                self.mm.show()
+                self.rd.show()
             #self.pager.print()
         else:
             # 没有按键时休眠，降低CPU占用
@@ -389,16 +390,62 @@ class renameDialog:
     def __init__(self,app:tfmApp) -> None:
         self.app = app
         self.title = "Rename"
-        self.x = 1
-        self.y = 1
-        self.w = 1
-        self.h = 1
+        self.w = 25
+        self.h = 4
+        self.x = 4
+        self.y = app.dp.askValue("cx",self.w)
+        self.context = ""
     def runLoop(self):
-        pass
+        k = key.get()
+        if k == None:
+            time.sleep(0.1)
+            #return
+        elif k != None and len(k) == 1:
+            self.context += k
+            self.printContext()
+        elif k == 'space':
+            self.context += " "
+            self.printContext()
+        elif k[:6] == 'shift+':
+            self.context += k[6:].upper()
+            self.printContext()
+        elif k == 'enter':
+            pass
+        elif k == 'esc':
+            self.app.action = self.app
+            self.app.dp.surfaces.remove(self)
+            self.app.dp.updateScreen()
+        elif k == 'backspace':
+            self.context = self.context[:-1]
+            self.printContext()
     def show(self):
-        pass
+        self.context = ""
+        self.print()
+        self.app.action = self # type: ignore
+        self.app.dp.surfaces.append(self)
+        self.app.dp.updateScreen()
+    def print(self):
+        self.printWindow()
+        self.printContext()
     def printWindow(self) -> None:
-        pass
+        self.app.dp.moveCursor(self.x,self.y)
+        self.app.dp.set_color(v.COLORS['bright_white'],v.BG_COLORS['magenta'],v.STYLES['bold'])
+        sys.stdout.write(str2long(self.title,self.w))#
+        self.app.dp.moveCursor(self.x,self.y + 1)
+        self.app.dp.moveCursor(self.x + 1,self.y)
+        self.app.dp.set_color(v.COLORS['bright_white'],v.BG_COLORS['cyan'],v.STYLES['bold'])
+        sys.stdout.write(str2long("",self.w))
+        self.app.dp.moveCursor(self.x + 2,self.y)
+        sys.stdout.write(str2long("",self.w))
+        self.app.dp.moveCursor(self.x + 3,self.y)
+        sys.stdout.write(str2long("",self.w))
+        sys.stdout.write(v.RESET)
+    def printContext(self):
+        self.app.dp.set_color(v.COLORS['bright_white'],v.BG_COLORS['blue'],v.STYLES['bold'])
+        self.app.dp.moveCursor(self.x + 2,self.y + 1)
+        sys.stdout.write(str2long(self.context,self.w - 2))
+        sys.stdout.write(v.RESET)
+        sys.stdout.flush()
 
 class mainMenu:
     action = {"exit":"Exit","setting":"Setting","about":"About"}
