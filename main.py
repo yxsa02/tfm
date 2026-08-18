@@ -331,19 +331,17 @@ class fileActionMenu:
             return None
         if k == 'esc':
             self.app.action = self.app
-            self.app.dp.clearScreen()
+            self.app.dp.surfaces.remove(self)
             self.app.dp.updateScreen()
-            self.app.pager.printPage()
         if k == 'up':
             self.last()
         if k == 'down':
             self.next()
         if k == 'enter':
             self.app.action = self.app
-            self.app.dp.clearScreen()
-            self.app.dp.updateScreen()
-            self.app.pager.printPage()
             self.do(self.keys[self.chosing - 1])
+            self.app.dp.updateScreen()
+            
         return None
     def do(self,action):
         """执行操作"""
