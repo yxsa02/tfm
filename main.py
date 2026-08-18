@@ -607,6 +607,34 @@ class mainMenu:
     def do(self,c):
         if c == "exit":
             self.app.status = 1
+        elif c == "setting":
+            self.app.d.show()
+            self.app.dp.printStatus("设置功能尚未实现")
+        elif c == "about":
+            self.app.d.show()
+            self.app.dp.printStatus("终端文件管理器 v1.0")
+
+class aboutDialog:
+    def __init__(self) -> None:
+        self.app = app
+        self.title = "About"
+        self.w = 25
+        self.h = 4
+        self.x = 4
+        self.y = app.dp.askValue("cx",self.w)
+    def printWindow(self) -> None:
+        self.app.dp.moveCursor(self.x,self.y)
+        self.app.dp.set_color(v.COLORS['bright_white'],v.BG_COLORS['magenta'],v.STYLES['bold'])
+        sys.stdout.write(str2long(" " + self.title,self.w))#
+        self.app.dp.moveCursor(self.x,self.y + 1)
+        self.app.dp.moveCursor(self.x + 1,self.y)
+        self.app.dp.set_color(v.COLORS['bright_white'],v.BG_COLORS['cyan'],v.STYLES['bold'])
+        sys.stdout.write(str2long("",self.w))
+        self.app.dp.moveCursor(self.x + 2,self.y)
+        sys.stdout.write(str2long("",self.w))
+        self.app.dp.moveCursor(self.x + 3,self.y)
+        sys.stdout.write(str2long("",self.w))
+        sys.stdout.write(v.RESET)
 
 if __name__ == "__main__":
     app = tfmApp(sys.argv[1] if len(sys.argv) > 1 else os.getcwd())
