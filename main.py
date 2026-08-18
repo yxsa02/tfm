@@ -218,12 +218,14 @@ class displayer:
         sys.stdout.write(str2long(message,self.w - 5))
         sys.stdout.write(v.RESET)
         sys.stdout.flush()
-    def askValue(self,q):
+    def askValue(self,q:str,p=0):
         """获取值"""
         if q == "lw":
             return int(self.w * self.mainBarWidth)
         elif q == "rw":
             return int(self.w - int(self.w * self.mainBarWidth))
+        elif q == "cx":
+            return int((self.w / 2) - (p / 2))
         else:
             return 0
          
