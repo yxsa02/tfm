@@ -395,42 +395,79 @@ class renameDialog:
         self.x = 4
         self.y = app.dp.askValue("cx",self.w)
         self.context = ""
+        self.cursorPos = 0
     def runLoop(self):
         k = key.get()
         if k == None:
             time.sleep(0.1)
-            #return
         elif k != None and len(k) == 1:
-            self.context += k
+            self.context = self.context[:self.cursorPos] + k + self.context[self.cursorPos:]
+            self.cursorPos += 1
             self.printContext()
         elif k == 'space':
-            self.context += " "
+            self.context = self.context[:self.cursorPos] + " " + self.context[self.cursorPos:]
+            self.cursorPos += 1
             self.printContext()
         elif k[:6] == 'shift+':
-            self.context += k[6:].upper()
+            char = k[6:].upper()
+            self.context = self.context[:self.cursorPos] + char + self.context[self.cursorPos:]
+            self.cursorPos += 1
             self.printContext()
+        elif k == 'left':
+            # 光标左移
+            if self.cursorPos > 0:
+                self.cursorPos -= 1
+                # 这里应该移动终端光标位置
+                self.printContext()
+        elif k == 'right':
+            # 光标右移
+            if self.cursorPos < len(self.context):
+                self.cursorPos += 1
+                # 这里应该移动终端光标位置
+                self.printContext()
         elif k == 'enter':
-            pass
+            self.do(self.context)
+            self.app.action = self.app
+            self.app.dp.surfaces.remove(self)
+            self.app.dp.updateScreen()
         elif k == 'esc':
             self.app.action = self.app
             self.app.dp.surfaces.remove(self)
             self.app.dp.updateScreen()
         elif k == 'backspace':
-            self.context = self.context[:-1]
-            self.printContext()
+            # 删除光标前的字符
+            if self.cursorPos > 0:
+                self.context = self.context[:self.cursorPos-1] + self.context[self.cursorPos:]
+                self.cursorPos -= 1
+                self.printContext()
+        elif k == 'ctrl+v':  # 检测 Ctrl+V
+            # 获取剪贴板内容
+            clip_text = clipboard.get_clipboard_text()
+            if clip_text:
+                # 过滤掉不可见字符（如换行符等）
+                clip_text = ''.join(c for c in clip_text if c.isprintable() or c == ' ')
+                # 在光标位置插入
+                self.context = (self.context[:self.cursorPos] + 
+                              clip_text + 
+                              self.context[self.cursorPos:])
+                self.cursorPos += len(clip_text)
+                self.printContext()
     def show(self):
-        self.context = ""
+        self.context = self.app.pager.item[self.app.pager.chosing - 1]
+        self.focu = None
+        self.cursorPos = len(self.context)
         self.print()
         self.app.action = self # type: ignore
         self.app.dp.surfaces.append(self)
         self.app.dp.updateScreen()
+        self.app.dp.showCursor()
     def print(self):
         self.printWindow()
         self.printContext()
     def printWindow(self) -> None:
         self.app.dp.moveCursor(self.x,self.y)
         self.app.dp.set_color(v.COLORS['bright_white'],v.BG_COLORS['magenta'],v.STYLES['bold'])
-        sys.stdout.write(str2long(self.title,self.w))#
+        sys.stdout.write(str2long(self.title,self.w,direction=0))
         self.app.dp.moveCursor(self.x,self.y + 1)
         self.app.dp.moveCursor(self.x + 1,self.y)
         self.app.dp.set_color(v.COLORS['bright_white'],v.BG_COLORS['cyan'],v.STYLES['bold'])
@@ -443,9 +480,67 @@ class renameDialog:
     def printContext(self):
         self.app.dp.set_color(v.COLORS['bright_white'],v.BG_COLORS['blue'],v.STYLES['bold'])
         self.app.dp.moveCursor(self.x + 2,self.y + 1)
-        sys.stdout.write(str2long(self.context,self.w - 2))
+        sys.stdout.write(str2long(self.context[::-1],self.w - 2,direction=-1)[::-1])
         sys.stdout.write(v.RESET)
-        sys.stdout.flush()
+        cursor_col = min(self.y + 1 + self.cursorPos, self.y + 1 + self.w - 3)
+        self.app.dp.moveCursor(self.x + 2, cursor_col)
+    def do(self,name:str):
+        if name == "":
+            self.app.dp.printStatus("重命名失败:名称不能为空")
+            return
+        try:
+            os.rename(os.path.join(self.app.path,self.app.pager.item[self.app.pager.chosing - 1]),os.path.join(self.app.path,name))
+            self.app.dp.printStatus(f"重命名成功: {self.app.pager.item[self.app.pager.chosing - 1]} -> {name}")
+            self.app.pager.updatePage(os.listdir(self.app.path))
+        except Exception as e:
+            self.app.dp.printStatus(f"重命名失败: {str(e)}")
+        
+class Dialog:
+    def __init__(self,app:tfmApp) -> None:
+        self.app = app
+        self.title = "Dialog"
+        self.w = 25
+        self.h = 6
+        self.x = 4
+        self.y = app.dp.askValue("cx",self.w)
+    def print(self):
+        self.app.dp.moveCursor(self.x,self.y)
+        self.app.dp.set_color(v.COLORS['bright_white'],v.BG_COLORS['magenta'],v.STYLES['bold'])
+        sys.stdout.write(str2long(self.title,self.w,direction=0))
+        self.app.dp.moveCursor(self.x,self.y + 1)
+        self.app.dp.moveCursor(self.x + 1,self.y)
+        self.app.dp.set_color(v.COLORS['bright_white'],v.BG_COLORS['cyan'],v.STYLES['bold'])
+        sys.stdout.write(str2long("",self.w))
+        self.app.dp.moveCursor(self.x + 2,self.y)
+        sys.stdout.write(str2long("施工中...",self.w,direction=0))
+        self.app.dp.moveCursor(self.x + 3,self.y)
+        sys.stdout.write(str2long("",self.w))
+        self.app.dp.moveCursor(self.x + 4,self.y)
+        sys.stdout.write(str2long("",self.w))
+        self.app.dp.moveCursor(self.x + 5,self.y)
+        sys.stdout.write(str2long("",self.w))
+        self.app.dp.set_color(v.COLORS['bright_white'],v.BG_COLORS['yellow'],v.STYLES['bold'])
+        self.app.dp.moveCursor(self.x + 4,self.y + 1)
+        sys.stdout.write(" OK ")
+        sys.stdout.write(v.RESET)
+    def show(self):
+        self.print()
+        self.app.action = self # type: ignore
+        self.app.dp.surfaces.append(self)
+        self.app.dp.updateScreen()
+    def runLoop(self):
+        k = key.get()
+        if not k:
+            time.sleep(0.1)
+            return None
+        elif k == 'esc':
+            self.app.action = self.app
+            self.app.dp.surfaces.remove(self)
+            self.app.dp.updateScreen()
+        elif k == 'enter':
+            self.app.action = self.app
+            self.app.dp.surfaces.remove(self)
+            self.app.dp.updateScreen()
 
 class mainMenu:
     action = {"exit":"Exit","setting":"Setting","about":"About"}
