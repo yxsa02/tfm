@@ -231,21 +231,23 @@ class displayer:
          
 class pager:
     """分页器"""
-    def __init__(self,app,l) -> None:
+    def __init__(self,app:tfmApp,l) -> None:
         self.app = app
         self.count = 1 # 当前选中项
         self.chosing = 1 # 当前页面的选中项
         self.updatePage(l)
+        app.dp.surfaces.append(self)
     def updatePage(self,dirList):
         """更新分页器"""
         self.dir = dirList # 总条目列表
         self.countAll = len(dirList) # 总条目数
         a = self.countAll / 10
-        self.pageAll = a if int(a) == a else int(a) + 1 # 总页数
+        self.pageAll = int(a) if int(a) == a else int(a) + 1 # 总页数
         self.page = 1 # 当前页码
         self.loadPageItems()
         if self.chosing > len(self.item):
             self.chosing = len(self.item)
+        self.count = (self.page - 1) * 10 + self.chosing
         self.print()
     def loadPageItems(self):
         """加载当前页的条目"""
@@ -266,13 +268,14 @@ class pager:
         """下一页"""
         if self.page < self.pageAll:
             self.page += 1
-            self.count += 10
+            #self.count += 10
         else:
             self.page = 1
             self.count = self.chosing
         self.loadPageItems()
         if self.chosing > len(self.item):
             self.chosing = len(self.item)
+        self.count = (self.page - 1) * 10 + self.chosing
         self.print()
     def itemLast(self):
         """上一项"""
@@ -286,11 +289,13 @@ class pager:
             self.chosing = len(self.item)
             self.count += len(self.item) - 1
         self.app.dp.printLeftItem(self.item[self.chosing - 1],self.chosing,True)
+        self.app.dp.printStatus(f"当前页码: {self.page}/{self.pageAll} | 当前选中项: {self.count}/{self.countAll}")
     def itemNext(self):
         """下一项"""
         if self.countAll == 0:
             return
-        self.app.dp.printLeftItem(self.item[self.chosing - 1],self.chosing,False)
+        if self.chosing != 0:
+            self.app.dp.printLeftItem(self.item[self.chosing - 1],self.chosing,False)
         if self.chosing < len(self.item) and self.count < self.countAll:
             self.count += 1
             self.chosing += 1
@@ -298,6 +303,7 @@ class pager:
             self.chosing = 1
             self.count -= len(self.item) - 1
         self.app.dp.printLeftItem(self.item[self.chosing - 1],self.chosing,True)
+        self.app.dp.printStatus(f"当前页码: {self.page}/{self.pageAll} | 当前选中项: {self.count}/{self.countAll}")
     def pageChange(self,page):
         pass
     def chose(self,id):
@@ -321,6 +327,7 @@ class fileActionMenu:
     def start(self):
         """启动文件操作菜单"""
         self.app.action = self # type: ignore
+        self.app.dp.surfaces.append(self)
         self.chosing = 1
         self.print()
     def runLoop(self):
