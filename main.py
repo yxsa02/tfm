@@ -1,5 +1,5 @@
 import sys,os,shutil,time
-import v,key
+import v,key,clipboard
 from util import *
    
 class tfmApp:
@@ -18,6 +18,7 @@ class tfmApp:
         self.fam = fileActionMenu(self)
         self.mm = mainMenu(self)
         self.rd = renameDialog(self)
+        self.d = Dialog(self)
     def changePath(self,path):
         """改变当前路径"""
         if path == "":
@@ -74,8 +75,7 @@ class tfmApp:
             elif k == 'backspace':
                 self.changePath("..")
             elif k == 't':
-                self.rd.show()
-            #self.pager.print()
+                self.d.show()
         else:
             # 没有按键时休眠，降低CPU占用
             time.sleep(0.2)  # 200ms
@@ -356,7 +356,9 @@ class fileActionMenu:
                 self.app.path = os.getcwd()
                 self.app.pager.updatePage(os.listdir(self.app.path))
         elif action == "rename":
-            pass
+            self.app.rd.show()
+        elif action == "new":
+            self.app.d.show()
         self.app.dp.surfaces.remove(self)
     def last(self):
         """选择上一项"""
